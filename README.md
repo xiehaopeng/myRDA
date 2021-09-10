@@ -6,6 +6,8 @@
 然后cd到prepare_work文件夹下，运行prepare_dataset.sh文件，完成数据准备工作。
 
 ## RDA项目代码结构
+这个部分介绍了项目中各个文件和文件夹的作用
+
 - myRDA
 - RDA
   - config: yml文件里设置了统一的学习率和优化器的参数
