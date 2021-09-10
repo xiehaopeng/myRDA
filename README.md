@@ -1,4 +1,9 @@
 # 基于RDA的 pp 域适应项目代码
+首先需要下载数据集，放在prepare_work文件夹下
+
+[Office-31](https://drive.google.com/file/d/1i9e23b5T5yTZ-FFuKd37_dTl-Dg64w4I/view?usp=sharing) ; [tiny-imagenet-200](https://drive.google.com/file/d/1LMAJwvQ1Ojn1NP6ymFJphZnHnYSWj-fN/view?usp=sharing) ; 
+
+然后cd到prepare_work文件夹下，运行prepare_dataset.sh文件，完成数据准备工作。
 
 ## RDA项目代码结构
 - myRDA
