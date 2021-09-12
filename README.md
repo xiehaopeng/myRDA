@@ -16,7 +16,9 @@
   - config: yml文件里设置了统一的学习率和优化器的参数
   - data: 存放了各类数据集的图片地址和对应标签
     - Office-31: Office-31数据集下混合了各种类型噪声，每个txt文件表示一种噪声添加方法
-        - amazon_ood_feature_noisy_0.4.txt
+        - amazon_ood_feature_noisy_0.4.txt: amazon域图片，增加了ood 和 feature noisy，noisy rate是0.4
+        - *_true.txt: label noisy中正确标签的样本
+        - *_false.txt: label noisy中错误标签的样本
         - ...
     - ...
     - modify_directory.py

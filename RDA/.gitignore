@@ -99,5 +99,3 @@ webpack_cache
 .vscode/
 
 *.iml
-
-../prepare_work

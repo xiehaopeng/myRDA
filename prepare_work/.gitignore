@@ -102,3 +102,5 @@ webpack_cache
 
 # 数据集文件太大，不上传
 *.zip
+Original_images/
+tiny-imagenet-200/
