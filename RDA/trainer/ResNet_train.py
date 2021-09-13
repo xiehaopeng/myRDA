@@ -164,6 +164,7 @@ if __name__ == '__main__':
     else:
         width = -1
 
+    # 加载网络模型
     model_instance = ResNetModel(base_net='ResNet50', width=width, use_gpu=True, class_num=class_num, srcweight=srcweight)
 
     # 设置source和target的图片加载器
@@ -188,4 +189,4 @@ if __name__ == '__main__':
     
     # 把训练阶段的损失loss和阶段性验证结果result  与   网络参数 保存到args.stats_file中
     pickle.dump(to_dump, open(args.stats_file, 'wb'))
-    torch.save(net_state_dict, args.stats_file + ".pth")
+    torch.save(net_state_dict, args.stats_file.split('.')[0] + ".pth")

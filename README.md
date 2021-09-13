@@ -32,7 +32,7 @@
   - scripts
   - statistic
     - xxx.pkl: 保存各种训练方式下的训练loss和验证准确率result
-    - xxx.pkl.pth: 保存各种训练方式下的网络参数
+    - xxx.pth: 保存各种训练方式下的网络参数
   - log: 存放训练的日志
   - trainer
   - utils

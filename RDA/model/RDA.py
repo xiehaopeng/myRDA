@@ -4,6 +4,8 @@ from model.modules.grl import WarmStartGradientReverseLayer
 import torch.nn.functional as F
 import torch
 import numpy as np
+
+
 class RDANet(nn.Module):
     def __init__(self, base_net='ResNet50', use_bottleneck=True, bottleneck_dim=1024, width=1024, class_num=31):
         super(RDANet, self).__init__()
@@ -46,6 +48,7 @@ class RDANet(nn.Module):
 
         return features, outputs, softmax_outputs, outputs_adv
 
+# Proxy Margin Discrepancy 代理边缘差异
 class PMD(object):
     def __init__(self, base_net='ResNet50', width=1024, class_num=31, use_bottleneck=True, use_gpu=True, srcweight=3):
         self.c_net = RDANet(base_net, use_bottleneck, width, width, class_num)

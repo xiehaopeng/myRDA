@@ -5,6 +5,8 @@ import torch
 import sys
 sys.path.insert(0, "/home/ubuntu/nas/projects/RDA")
 from utils.config import Config
+
+
 class INVScheduler(object):
     def __init__(self, gamma, decay_rate, init_lr=0.001):
         self.gamma = gamma
@@ -18,6 +20,7 @@ class INVScheduler(object):
             param_group['lr'] = lr * group_ratios[i]
             i+=1
         return optimizer
+
 
 #==============eval
 def evaluate(model_instance, input_loader):
@@ -52,6 +55,7 @@ def evaluate(model_instance, input_loader):
     accuracy = torch.sum(torch.squeeze(predict).float() == all_labels).float() / float(all_labels.size()[0])
     model_instance.set_train(ori_train_state)
     return {'accuracy':accuracy}
+
 
 def train(model_instance, train_source_clean_loader, train_source_noisy_loader, train_target_loader, test_target_loader, group_ratios, max_iter, optimizer, lr_scheduler, eval_interval, del_rate=0.4):
     model_instance.set_train(True)
@@ -99,6 +103,7 @@ def train(model_instance, train_source_clean_loader, train_source_noisy_loader, 
     #torch.save(model_instance.c_net.state_dict(), 'statistic/Ours_model.pth')
     return [loss, result]
 
+
 def train_batch(model_instance, inputs_source, labels_source, inputs_target, optimizer, max_iter, del_rate, inputs_source_noisy):
     inputs = torch.cat((inputs_source, inputs_target), dim=0)
     total_loss = model_instance.get_loss_without_unlabeled_data(inputs, labels_source, max_iter, del_rate=del_rate)
@@ -134,7 +139,7 @@ if __name__ == '__main__':
     source_file = args.src_address
     target_file = args.tgt_address
 
-
+    # 不同数据集设置不同参数
     if args.dataset == 'Office-31':
         class_num = 31
         width = 1024
@@ -163,7 +168,10 @@ if __name__ == '__main__':
     else:
         width = -1
 
+    # 加载网络模型
     model_instance = PMD(base_net='ResNet50', width=width, use_gpu=True, class_num=class_num, srcweight=srcweight)
+
+    # 设置source和target的图片加载器
     if args.noisy_rate == 0.:
         train_source_clean_loader = load_images(source_file, batch_size=32, is_cen=is_cen, split_noisy=False)
         train_source_noisy_loader = train_source_clean_loader
@@ -172,16 +180,20 @@ if __name__ == '__main__':
     train_target_loader = load_images(target_file, batch_size=32, is_cen=is_cen)
     test_target_loader = load_images(target_file, batch_size=32, is_train=False)
 
+    # 
     param_groups = model_instance.get_parameter_list()
     group_ratios = [group['lr'] for group in param_groups]
 
+    # 设置优化器和学习率
     assert cfg.optim.type == 'sgd', 'Optimizer type not supported!'
-
     optimizer = torch.optim.SGD(param_groups, **cfg.optim.params)
-
     assert cfg.lr_scheduler.type == 'inv', 'Scheduler type not supported!'
     lr_scheduler = INVScheduler(gamma=cfg.lr_scheduler.gamma,
                                 decay_rate=cfg.lr_scheduler.decay_rate,
                                 init_lr=cfg.init_lr)
+                                
+    # 训练模型，其中max_iter表示最大迭代批数，eval_interval表示验证模型的间隔批数
     to_dump = train(model_instance, train_source_clean_loader, train_source_noisy_loader, train_target_loader, test_target_loader, group_ratios, max_iter=20000, optimizer=optimizer, lr_scheduler=lr_scheduler, eval_interval=1000, del_rate=args.del_rate)
+    
+    # 把训练阶段的损失loss和阶段性验证结果result保存到args.stats_file中
     pickle.dump(to_dump, open(args.stats_file, 'wb'))

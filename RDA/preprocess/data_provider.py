@@ -53,7 +53,7 @@ def load_images(images_file_path, batch_size, resize_size=256, is_train=True, cr
         images_loader = util_data.DataLoader(images, batch_size=batch_size, shuffle=False, num_workers=4)
         return images_loader
     else:
-        if is_cen:
+        if is_cen:  # is_cen表示是否需要进行中心裁剪预处理
             transformer = transforms.Compose([ResizeImage(resize_size),
                 transforms.Scale(resize_size),
                 transforms.RandomHorizontalFlip(),
