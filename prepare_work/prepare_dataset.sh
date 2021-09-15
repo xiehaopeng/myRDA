@@ -50,5 +50,5 @@ echo -------------prepare tiny-imagenet-200 dataset END-------------
 
 # 把RDA项目复制到/home/ubuntu/nas/projects/RDA
 echo -------------prepare to copy RDA project-------------
-cp ../RDA /home/ubuntu/nas/projects/RDA
+cp -r ../RDA /home/ubuntu/nas/projects/RDA
 echo -------------all preparation stages over-------------
