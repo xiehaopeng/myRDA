@@ -1,5 +1,6 @@
 """
 This code is to select out label-noisy examples according to the small loss criterion.  
+选择loss小的样本，写入_pred.txt文件中
 """
 
 import tqdm
@@ -61,12 +62,13 @@ def evaluate(model_instance, input_loader, loss_matrix, epoch):
     pred = all_probs[index, a_labels.long()]
     loss = - torch.log(pred)
     loss = loss.data.cpu().numpy()
-    loss_matrix[:,epoch]=loss
+    loss_matrix[:,epoch]=loss       # 把本轮的loss加入到loss矩阵中
     _, predict = torch.max(all_probs, 1)
     accuracy = torch.sum(torch.squeeze(predict).float() == all_labels).float() / float(all_labels.size()[0])
     model_instance.set_train(ori_train_state)
     return accuracy, loss_matrix
 
+# 训练max_epoch轮，输出训练过程中的loss矩阵(每个样本对应的loss)
 def train(model_instance, train_source_loader, test_source_loader, group_ratios, max_iter, optimizer, lr_scheduler, max_epoch=30):
     model_instance.set_train(True)
     print("start train...")
@@ -77,6 +79,7 @@ def train(model_instance, train_source_loader, test_source_loader, group_ratios,
     epoch = 0
     total_progress_bar = tqdm.tqdm(desc='Train iter', total=max_iter)
     while True:
+        # 训练
         for datas in tqdm.tqdm(train_source_loader, total=len(train_source_loader), desc='Train epoch = {}'.format(epoch), ncols=80, leave=False):
             inputs_source, labels_source, _ = datas
 
@@ -93,7 +96,7 @@ def train(model_instance, train_source_loader, test_source_loader, group_ratios,
             iter_num += 1
             total_progress_bar.update(1)
 
-        #val
+        # 验证
         eval_result, loss_matrix = evaluate(model_instance, test_source_loader, loss_matrix, epoch)
         loss_matrix = loss_matrix
 
@@ -186,9 +189,9 @@ if __name__ == '__main__':
     np.save(args.stats_file, loss_matrix)
 
     #detect small loss sample
-    save_clean_file = source_file.split('.t')[0] + '_true_pred.txt'
+    save_clean_file = source_file.split('.t')[0] + '_true_pred.txt'     # 分类器预测的clean数据(loss小的)
+    save_noisy_file = source_file.split('.t')[0] + '_false_pred.txt'    # 分类器预测的noisy数据(loss大的)
     nr = args.noisy_rate
-    save_noisy_file = source_file.split('.t')[0] + '_false_pred.txt'
     clean_labels, noise_labels, imgs = [], [], []
     if args.noisy_type == 'uniform':
         with open(source_file, 'r') as f:
@@ -245,7 +248,6 @@ if __name__ == '__main__':
                     clean_labels.append(1)
                 else:
                     clean_labels.append(0)
-
     elif args.noisy_type == 'feature_uniform':
         nr = nr/2
         with open(source_file, 'r') as f:
@@ -293,13 +295,14 @@ if __name__ == '__main__':
                     clean_labels.append(0)
     else:
         raise Exception('Unsupport noise type {}'.format(args.noisy_type))
+    
     loss_sele = loss_matrix[:, :epoch]
     loss_mean = loss_sele.mean(axis=1)
     cr = min(1-1.2*nr, 0.9*(1-nr))
     sort_index = np.argsort(loss_mean)
 
     #sort samples per class
-    clean_index = []
+    clean_index = []        # 存放所有预测干净样本的位置下标
     for i in range(int(class_num)):
         c = []
         for idx in sort_index:

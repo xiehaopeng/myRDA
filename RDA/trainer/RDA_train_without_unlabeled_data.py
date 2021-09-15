@@ -51,7 +51,7 @@ def evaluate(model_instance, input_loader):
             all_probs = torch.cat((all_probs, probabilities), 0)
             all_labels = torch.cat((all_labels, labels), 0)
 
-    _, predict = torch.max(all_probs, 1)
+    _, predict = torch.max(all_probs, 1)    # 返回  每一行中最大值的那个元素，返回其索引（返回最大元素在这一行的列索引）
     accuracy = torch.sum(torch.squeeze(predict).float() == all_labels).float() / float(all_labels.size()[0])
     model_instance.set_train(ori_train_state)
     return {'accuracy':accuracy}
@@ -67,6 +67,7 @@ def train(model_instance, train_source_clean_loader, train_source_noisy_loader, 
     epoch = 0
     total_progress_bar = tqdm.tqdm(desc='Train iter', total=max_iter)
     while True:
+        # source clean样本，source noisy样本，target 样本
         for (datas_clean, datas_noisy, datat) in tqdm.tqdm(
                 zip(train_source_clean_loader, train_source_noisy_loader, train_target_loader),
                 total=min(len(train_source_clean_loader), len(train_target_loader)),
@@ -191,7 +192,7 @@ if __name__ == '__main__':
     lr_scheduler = INVScheduler(gamma=cfg.lr_scheduler.gamma,
                                 decay_rate=cfg.lr_scheduler.decay_rate,
                                 init_lr=cfg.init_lr)
-                                
+
     # 训练模型，其中max_iter表示最大迭代批数，eval_interval表示验证模型的间隔批数
     to_dump = train(model_instance, train_source_clean_loader, train_source_noisy_loader, train_target_loader, test_target_loader, group_ratios, max_iter=20000, optimizer=optimizer, lr_scheduler=lr_scheduler, eval_interval=1000, del_rate=args.del_rate)
     

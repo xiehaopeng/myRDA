@@ -66,7 +66,7 @@ def load_images(images_file_path, batch_size, resize_size=256, is_train=True, cr
                   transforms.RandomHorizontalFlip(),
                   transforms.ToTensor(),
                   normalize])
-        if split_noisy:     # 是否加载clean的loader
+        if split_noisy:     # 是否把clean和noisy样本分开，返回两个加载器
             clean_images = ImageList(open(images_file_path.split('.t')[0]+'_true_pred.txt').readlines(), transform=transformer)
             noisy_images = ImageList(open(images_file_path.split('.t')[0]+'_false_pred.txt').readlines(), transform=transformer)
             clean_loader = util_data.DataLoader(clean_images, batch_size=batch_size, shuffle=True, num_workers=4)

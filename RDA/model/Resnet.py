@@ -90,7 +90,7 @@ class ResNetModel(object):
 
     def predict(self, inputs):
         features, logits, softmax_outputs = self.c_net(inputs)
-        return features, logits, softmax_outputs
+        return features, logits, softmax_outputs        # 特征,分类器结果,softmax结果
 
     def get_parameter_list(self):
         return self.c_net.parameter_list

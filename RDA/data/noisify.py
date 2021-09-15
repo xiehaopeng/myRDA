@@ -285,11 +285,11 @@ if __name__ == '__main__':
         #############################################################
         ##      Todo: introduce out-of-distribution (ood) noise    ##
         #############################################################
-        # """
         # 往原始数据集中，加入其他数据集图片，并且标签按照原始数据集的比例来设置
         # 比如原始数据集中有3个类别，分别有(10,20,30)个样本，假设当前ood_noisy_rate为0.5
         # 则表示原始数据集样本占总体数据集样本的50%，需要另外加入50%的其他样本
         # 加入ood样本之后，数据集分别为(20,40,60)，其中每个类别都有50%为ood样本
+        """
         ood_dataset = "tinyimagenet.txt"    # Introduce other dataset
         with open(ood_dataset, 'r') as f:
             ood_file_dir, ood_label = [], []
@@ -314,12 +314,14 @@ if __name__ == '__main__':
                         f.write('{} {} {}\n'.format(d, label[i], label[i]))             # 原始样本
                     for i, d in enumerate(new_file_dir):
                         f.write('{} {} {}\n'.format(d, new_label[i], class_number+1))   # ood样本，假标签，真标签(所有ood样本为一个类别)
-        # """
+        """
 
 
         #############################################################
         ##           Todo mix: feature noise + label noise         ##
         #############################################################
+        # 混合feature noise 和 label noise
+        # 前提 需要先生成featrue noisy的txt
         """
         noisy_rate = [0.4]
         for rate in noisy_rate:
@@ -344,7 +346,8 @@ if __name__ == '__main__':
                     for i, d in enumerate(file_dir):
                         f.write('{} {} {}\n'.format(d, label_noisy[i], label[i]))
 
-                #save split noisy and clean data for validate the idea
+                # save split noisy and clean data for validate the idea
+                # 把正确标签和错误标签样本分开放在 *_true.txt 和 *_false.txt 中
                 save_clean_file = data_file.split('.')[0] + '_feature_{}_noisy_{}_true.txt'.format(tp, rate)
                 save_noisy_file = data_file.split('.')[0] + '_feature_{}_noisy_{}_false.txt'.format(tp, rate)
                 with open(save_clean_file,'w') as f:
@@ -360,6 +363,7 @@ if __name__ == '__main__':
         #############################################################
         ##             Todo mix: label noise + OOD noise           ##
         #############################################################
+        # 需要先生成 label noise 的txt文件
         '''
         ood_dataset = "tinyimagenet.txt" #Introduce other dataset
         with open(ood_dataset, 'r') as f:
@@ -398,6 +402,7 @@ if __name__ == '__main__':
         #############################################################
         ##            Todo mix: feature noise + OOD noise          ##
         #############################################################
+        # 需要先生成 feature noise 的txt文件
         '''
         ood_dataset = "tinyimagenet.txt" #Introduce other dataset
         with open(ood_dataset, 'r') as f:
@@ -436,6 +441,7 @@ if __name__ == '__main__':
         #############################################################
         ##     Todo mix: feature noise + label noise + ood noise   ##
         #############################################################
+        # 需要先生成 feature noise + label noise 的txt文件
         '''
         ood_dataset = "tinyimagenet.txt" #Introduce other dataset
         with open(ood_dataset, 'r') as f:
