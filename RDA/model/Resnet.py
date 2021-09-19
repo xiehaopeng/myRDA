@@ -28,17 +28,18 @@ class ResNetPlus(nn.Module):
     def __init__(self, base_net='ResNet50', use_bottleneck=True, bottleneck_dim=1024, width=1024, class_num=31):
         super(ResNetPlus, self).__init__()
         ## set base network
-        ## 设置网络结构
+        # 特征提取器 + 瓶颈层
         self.base_network = backbone.network_dict[base_net]()
         self.use_bottleneck = use_bottleneck
         self.bottleneck_layer_list = [nn.Linear(self.base_network.output_num(), bottleneck_dim), nn.BatchNorm1d(bottleneck_dim), nn.ReLU(), nn.Dropout(0.5)]
         self.bottleneck_layer = nn.Sequential(*self.bottleneck_layer_list)
+        # 分类器
         self.classifier_layer_list = [nn.Linear(bottleneck_dim, width), nn.ReLU(), nn.Dropout(0.5),
                                         nn.Linear(width, class_num)]
         self.classifier_layer = nn.Sequential(*self.classifier_layer_list)
         self.softmax = nn.Softmax(dim=1)
         #self.temperature = nn.Parameter((torch.ones(1)*1.5).cuda())
-       #self.temperature = nn.Parameter(torch.ones(1).cuda())
+        #self.temperature = nn.Parameter(torch.ones(1).cuda())
 
         ## initialization
         ## 初始化网络参数

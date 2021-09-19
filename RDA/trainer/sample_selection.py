@@ -72,12 +72,11 @@ def evaluate(model_instance, input_loader, loss_matrix, epoch):
 def train(model_instance, train_source_loader, test_source_loader, group_ratios, max_iter, optimizer, lr_scheduler, max_epoch=30):
     model_instance.set_train(True)
     print("start train...")
-    #max_epoch = 30
     sample_num = len(test_source_loader.dataset)
     loss_matrix = np.zeros((sample_num, max_epoch))
     iter_num = 0
     epoch = 0
-    total_progress_bar = tqdm.tqdm(desc='Train iter', total=max_iter)
+    # total_progress_bar = tqdm.tqdm(desc='Train iter', total=max_iter)
     while True:
         # 训练
         for datas in tqdm.tqdm(train_source_loader, total=len(train_source_loader), desc='Train epoch = {}'.format(epoch), ncols=80, leave=False):
@@ -94,7 +93,7 @@ def train(model_instance, train_source_loader, test_source_loader, group_ratios,
             train_batch(model_instance, inputs_source, labels_source, optimizer)
 
             iter_num += 1
-            total_progress_bar.update(1)
+            # total_progress_bar.update(1)
 
         # 验证
         eval_result, loss_matrix = evaluate(model_instance, test_source_loader, loss_matrix, epoch)
@@ -102,7 +101,7 @@ def train(model_instance, train_source_loader, test_source_loader, group_ratios,
 
         if epoch % 10 == 0:
             #print(loss_matrix)
-            print('source domain accuracy:', eval_result)
+            print('source domain accuracy:', eval_result)       # 含噪的训练样本分类结果准确率
         epoch += 1
 
         if epoch >= max_epoch:
@@ -191,13 +190,15 @@ if __name__ == '__main__':
     #detect small loss sample
     save_clean_file = source_file.split('.t')[0] + '_true_pred.txt'     # 分类器预测的clean数据(loss小的)
     save_noisy_file = source_file.split('.t')[0] + '_false_pred.txt'    # 分类器预测的noisy数据(loss大的)
-    nr = args.noisy_rate
+    nr = args.noisy_rate        # 原始数据集设定的噪声比
+
+    # 检查获得数据集图片中每个样本的 是否为干净标签(clean_labels) 带噪标签(noise_labels) 图片地址(imgs)
     clean_labels, noise_labels, imgs = [], [], []
     if args.noisy_type == 'uniform':
         with open(source_file, 'r') as f:
             images = f.readlines()
             for index, i in enumerate(images):
-                i =  i.split()
+                i =  i.split()  # 空格分隔
                 img = i[0]
                 imgs.append(img)
                 noisy_label = i[1]
@@ -207,7 +208,7 @@ if __name__ == '__main__':
                     clean_labels.append(1)
                 else:
                     clean_labels.append(0)
-    elif args.noisy_type == 'ood':
+    elif args.noisy_type == 'ood':      # ood noisy 文件中ood样本的label为classnum+1
         with open(source_file, 'r') as f:
             images = f.readlines()
             for index, i in enumerate(images):
@@ -222,6 +223,7 @@ if __name__ == '__main__':
                 else:
                     clean_labels.append(0)
     elif args.noisy_type == 'ood_uniform':
+        nr = 1 - (1-nr/2)*(1-nr/2)              # 真实噪声比
         with open(source_file, 'r') as f:
             images = f.readlines()
             for index, i in enumerate(images):
@@ -235,19 +237,19 @@ if __name__ == '__main__':
                     clean_labels.append(1)
                 else:
                     clean_labels.append(0)
-    elif args.noisy_type == 'feature':
-        with open(source_file, 'r') as f:
-            images = f.readlines()
-            for index, i in enumerate(images):
-                i =  i.split()
-                img = i[0]
-                imgs.append(img)
-                noisy_label = i[1]
-                noise_labels.append(int(noisy_label))
-                if img.split('_')[-1] != 'corrupted.jpg':
-                    clean_labels.append(1)
-                else:
-                    clean_labels.append(0)
+    # elif args.noisy_type == 'feature':
+    #     with open(source_file, 'r') as f:
+    #         images = f.readlines()
+    #         for index, i in enumerate(images):
+    #             i =  i.split()
+    #             img = i[0]
+    #             imgs.append(img)
+    #             noisy_label = i[1]
+    #             noise_labels.append(int(noisy_label))
+    #             if img.split('_')[-1] != 'corrupted.jpg':
+    #                 clean_labels.append(1)
+    #             else:
+    #                 clean_labels.append(0)
     elif args.noisy_type == 'feature_uniform':
         nr = nr/2
         with open(source_file, 'r') as f:
@@ -263,8 +265,8 @@ if __name__ == '__main__':
                     clean_labels.append(1)
                 else:
                     clean_labels.append(0)
-    elif args.noisy_type == 'ood_feature_uniform':
-        nr = 0.4
+    elif args.noisy_type == 'ood_feature':
+        nr = nr/2
         with open(source_file, 'r') as f:
             images = f.readlines()
             for index, i in enumerate(images):
@@ -278,8 +280,9 @@ if __name__ == '__main__':
                     clean_labels.append(1)
                 else:
                     clean_labels.append(0)
-    elif args.noisy_type == 'ood_feature':
-        nr = nr
+    elif args.noisy_type == 'ood_feature_uniform':
+        nr = nr/3*2
+        nr = 1 - (1-nr/2)*(1-nr/2)
         with open(source_file, 'r') as f:
             images = f.readlines()
             for index, i in enumerate(images):
@@ -298,11 +301,16 @@ if __name__ == '__main__':
     
     loss_sele = loss_matrix[:, :epoch]
     loss_mean = loss_sele.mean(axis=1)
-    cr = min(1-1.2*nr, 0.9*(1-nr))
+    # nr = 0.2, cr = 0.72
+    # nr = 0.4, cr = 0.52
+    # nr = 0.6, cr = 0.28
+    # nr = 0.8, cr = 0.04
+    # nr最高只能设置0.8，不然会把所有样本都淘汰
+    cr = min(1-1.2*nr, 0.9*(1-nr))      # 每个类挑选的干净样本比例clean rate
     sort_index = np.argsort(loss_mean)
 
     #sort samples per class
-    clean_index = []        # 存放所有预测干净样本的位置下标
+    clean_index, noisy_index = [], []            # 存放所有预测干净/噪声样本的位置下标
     for i in range(int(class_num)):
         c = []
         for idx in sort_index:
@@ -311,14 +319,25 @@ if __name__ == '__main__':
         clean_num = int(len(c)*cr)
         clean_idx = c[:clean_num]
         clean_index.extend(clean_idx)
+        noisy_idx = c[clean_num:]
+        noisy_index.extend(noisy_idx)
     #clean_num = int(np.ceil(len(sort_index)*cr))
     #clean_index = sort_index[:clean_num]
-    acc_mum = 0
+    acc_clean_num, acc_noisy_num = 0, 0
     for i in clean_index:
         if clean_labels[i] == 1:
-            acc_mum += 1
-    acc = acc_mum/len(clean_index)
-    print("Epoch {} vs Acc {} vs cr {} vs nr {}".format(epoch,acc,cr,nr))
+            acc_clean_num += 1
+    for i in noisy_index:
+        if clean_labels[i] == 0:
+            acc_noisy_num += 1
+    acc_clean = acc_clean_num/len(clean_index)                      # 挑干净样本的正确率
+    acc_noisy = acc_noisy_num/(len(clean_labels)-len(clean_index))  # 挑噪声样本的正确率
+    # amazon: 2817; dslr: 498; webcam: 795; 
+    print("训练总轮数 Epoch {} vs 挑干净样本的正确率 Acc_clean {} vs 挑噪声样本的正确率 Acc_noisy {} vs 样本筛选率 cr {} vs 样本噪声比 nr {}".format(epoch,round(acc_clean,4),round(acc_noisy,4),round(cr,4),round(nr,4)))
+    print("样本总数   {} vs 真实干净样本数    {} vs 真实噪声样本数    {}".format( len(clean_labels), acc_clean_num+len(clean_labels)-len(clean_index)-acc_noisy_num, len(clean_index)-acc_clean_num+acc_noisy_num ))
+    print("预测干净样本 {}: {}/{}".format(len(clean_index), acc_clean_num, len(clean_index)-acc_clean_num ))
+    print("预测噪声样本 {}: {}/{}".format(len(clean_labels)-len(clean_index), len(clean_labels)-len(clean_index)-acc_noisy_num, acc_noisy_num ))
+    print("数据利用率   {}".format(round(acc_clean_num/(acc_clean_num+len(clean_labels)-len(clean_index)-acc_noisy_num),4)))
 
     with open(save_clean_file,'w') as f:
         with open(save_noisy_file, 'w') as ff:

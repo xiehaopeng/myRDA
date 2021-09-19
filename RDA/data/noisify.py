@@ -12,8 +12,9 @@ def listing_file(domains, data_dir, save_dir):
     ''' 创建数据集图片的地址和对应数字标签的txt文件
     '''
     for d in domains:
-        file_dir = data_dir + d + '/*/*'
+        file_dir = data_dir + d + '/*/*/*'
         save_file = save_dir + d + '.txt'
+        print(save_file)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
         img_files = glob.glob(file_dir, recursive=True)     # 根据地址找到对应的所有文件；recursive=True表示递归调用，与通配符*一起使用，获取目标文件夹下的所有文件
@@ -21,9 +22,9 @@ def listing_file(domains, data_dir, save_dir):
         str_num_label_map = {}                              # 表示字符串标签和数字标签的关系
         label_num = 0                                       # label_num是目前图片种类数量
         for img in img_files:
-            str_label = img.split('/')[8]                   # str_label是当前的图片的字符串标签
+            str_label = img.split('/')[9]                   # str_label是当前的图片的字符串标签
             print(str_label)
-            if not str_num_label_map.has_key(str_label): 
+            if str_label not in str_num_label_map:
                 str_num_label_map[str_label] = label_num
                 label_num += 1
             cur_num_label = str_num_label_map[str_label]
@@ -188,7 +189,7 @@ if __name__ == '__main__':
         class_number = 31
         #data_files = ['Office-31/webcam.txt', 'Office-31/dslr.txt', 'Office-31/amazon.txt']
         # 这里的data_files可以手动修改，想要noisy哪个域就填哪个
-        data_files = ['Office-31/amazon.txt']           
+        data_files = ['Office-31/webcam.txt', 'Office-31/dslr.txt', 'Office-31/amazon.txt']
         domains = ['webcam', 'dslr', 'amazon']
         data_dir = '/home/ubuntu/nas/datasets/office/office-31/'
         save_dir = 'Office-31/'
@@ -203,7 +204,7 @@ if __name__ == '__main__':
         raise Exception("Sorry, unsupported dataset")
 
     listing = False             # 是否创建数据集图片的地址txt文件
-    corrupt_feature = False     # 是否需要生成添加椒盐噪声和高斯模糊的corrupted图片
+    corrupt_feature = True      # 是否需要生成添加椒盐噪声和高斯模糊的corrupted图片
     pre_imagenet = False        # 是否需要生成tinyimagenet所有训练图片的地址txt文件
 
     # listing source files of images into text if not exists.
@@ -227,7 +228,7 @@ if __name__ == '__main__':
         ##                     Todo: label noisy                   ##
         #############################################################
         """
-        noisy_rate = [0.2,0.4,0.6,0.8]
+        noisy_rate = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]
         noisy_type = ['uniform', 'pair']        # label noisy 有pair和uniform两种类型，分别对应了asymmetric_noisy和symmetric_noisy方法
         for tp in noisy_type:
             for rate in noisy_rate:
@@ -266,7 +267,7 @@ if __name__ == '__main__':
         '''
         # 生成feature noisy之前，需要保证所有图片都生成了_corrupted.jpg版本
         # 每张图片有noisy_feature_rate的概率变成含噪图片，噪声是固定参数的椒盐噪声和高斯模糊
-        noisy_feature_rate = [0.2]      # [0.1,0.2,0.3,0.4,0.6,0.8]     
+        noisy_feature_rate = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]
         for rate in noisy_feature_rate:
             save_file = data_file.split('.')[0] + '_feature_noisy_{}.txt'.format(rate)
             num = 0                     # 记录添加了feature noisy的噪声图片数量
@@ -295,7 +296,7 @@ if __name__ == '__main__':
             ood_file_dir, ood_label = [], []
             for i in f.read().splitlines():
                 ood_file_dir.append(i)
-        ood_noisy_rate = [0.1,0.2,0.3,0.4,0.6,0.8]
+        ood_noisy_rate = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]
         for rate in ood_noisy_rate:
             save_file = data_file.split('.')[0] + '_ood_noisy_{}.txt'.format(rate)
             # num_per_class[i]表示原始类别i中需要加入的新域的样本数量
@@ -322,11 +323,12 @@ if __name__ == '__main__':
         #############################################################
         # 混合feature noise 和 label noise
         # 前提 需要先生成featrue noisy的txt
+        # nosiy rate 是两种noise平分，比如总noisy_rate是0.4，那么feature noise有0.2，label noise也有0.2
         """
-        noisy_rate = [0.4]
+        noisy_rate = [0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6]
         for rate in noisy_rate:
             rate = rate #for fair comparison with TCL
-            feature_noisy_file = data_file.split('.')[0] + '_feature_noisy_{}.txt'.format(rate/2)
+            feature_noisy_file = data_file.split('.')[0] + '_feature_noisy_{}.txt'.format(round(rate/2,1))
             with open(feature_noisy_file, 'r') as f:
                 file_dir, label = [], []
                 for i in f.read().splitlines():
@@ -336,9 +338,9 @@ if __name__ == '__main__':
             noisy_type = ['uniform']
             for tp in noisy_type:
                 if tp is 'pair':
-                    label_noisy, acutal_noisy_rate = asymmetric_noisy(label, rate/2, class_number=class_number)
+                    label_noisy, acutal_noisy_rate = asymmetric_noisy(label, round(rate/2,1), class_number=class_number)
                 elif tp is 'uniform':
-                    label_noisy, acutal_noisy_rate = symmetric_noisy(label, rate/2, class_number=class_number)
+                    label_noisy, acutal_noisy_rate = symmetric_noisy(label, round(rate/2,1), class_number=class_number)
                 print('generate noisy rate:', acutal_noisy_rate)
                 #save all the images in a txt
                 save_file = data_file.split('.')[0] + '_feature_{}_noisy_{}.txt'.format(tp, rate)
@@ -364,15 +366,16 @@ if __name__ == '__main__':
         ##             Todo mix: label noise + OOD noise           ##
         #############################################################
         # 需要先生成 label noise 的txt文件
+        # noisy_rate也是平分
         '''
         ood_dataset = "tinyimagenet.txt" #Introduce other dataset
         with open(ood_dataset, 'r') as f:
             ood_file_dir, ood_label = [], []
             for i in f.read().splitlines():
                 ood_file_dir.append(i)
-        ood_noisy_rate = [0.4]
-        for rate in ood_noisy_rate:
-            label_noise_file = data_file.split('.')[0] + '_uniform_noisy_{}.txt'.format(rate/2)
+        noisy_rate = [0.2,0.4,0.6,0.8,1.0]      # 总和noisy_rate最大为1，此时数据集中有25%为干净数据
+        for rate in noisy_rate:
+            label_noise_file = data_file.split('.')[0] + '_uniform_noisy_{}.txt'.format(round(rate/2,1))
             with open(label_noise_file, 'r') as f:
                 noisy_file_dir, noisy_label = [], []
                 for i in f.read().splitlines():
@@ -383,7 +386,7 @@ if __name__ == '__main__':
             num_per_class = np.zeros(class_number)
             for i in label:
                 num_per_class[i] += 1
-            rate = rate/2
+            rate = round(rate/2,1)
             num_per_class = np.ceil(num_per_class*(rate/(1-rate)))
             random.shuffle(ood_file_dir)
             new_file_dir = ood_file_dir[:int(num_per_class.sum())]
@@ -409,9 +412,9 @@ if __name__ == '__main__':
             ood_file_dir, ood_label = [], []
             for i in f.read().splitlines():
                 ood_file_dir.append(i)
-        ood_noisy_rate = [0.4]
-        for rate in ood_noisy_rate:
-            feature_noise_file = data_file.split('.')[0] + '_feature_noisy_{}.txt'.format(rate/2)
+        noisy_rate = [0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6]
+        for rate in noisy_rate:
+            feature_noise_file = data_file.split('.')[0] + '_feature_noisy_{}.txt'.format(round(rate/2,1))
             with open(feature_noise_file, 'r') as f:
                 noisy_file_dir, noisy_label = [], []
                 for i in f.read().splitlines():
@@ -422,7 +425,7 @@ if __name__ == '__main__':
             num_per_class = np.zeros(class_number)
             for i in label:
                 num_per_class[i] += 1
-            rate = rate/2
+            rate = round(rate/2,1)
             num_per_class = np.ceil(num_per_class*(rate/(1-rate)))
             random.shuffle(ood_file_dir)
             new_file_dir = ood_file_dir[:int(num_per_class.sum())]
@@ -442,15 +445,16 @@ if __name__ == '__main__':
         ##     Todo mix: feature noise + label noise + ood noise   ##
         #############################################################
         # 需要先生成 feature noise + label noise 的txt文件
+        # noisy_rate三等分
         '''
         ood_dataset = "tinyimagenet.txt" #Introduce other dataset
         with open(ood_dataset, 'r') as f:
             ood_file_dir, ood_label = [], []
             for i in f.read().splitlines():
                 ood_file_dir.append(i)
-        ood_noisy_rate = [0.6]
-        for rate in ood_noisy_rate:
-            mixed_noise_file = data_file.split('.')[0] + '_feature_uniform_noisy_{}.txt'.format(0.4)
+        noisy_rate = [0.3,0.6,0.9,1.2,1.5]      # 最大为1.5
+        for rate in noisy_rate:
+            mixed_noise_file = data_file.split('.')[0] + '_feature_uniform_noisy_{}.txt'.format(round(rate/3*2,1))
             with open(mixed_noise_file, 'r') as f:
                 noisy_file_dir, noisy_label = [], []
                 for i in f.read().splitlines():
@@ -461,7 +465,7 @@ if __name__ == '__main__':
             num_per_class = np.zeros(class_number)
             for i in label:
                 num_per_class[i] += 1
-            rate = 0.2
+            rate = round(rate/3,1)
             num_per_class = np.ceil(num_per_class*(rate/(1-rate)))
             random.shuffle(ood_file_dir)
             new_file_dir = ood_file_dir[:int(num_per_class.sum())]
